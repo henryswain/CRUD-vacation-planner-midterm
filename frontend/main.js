@@ -313,7 +313,6 @@ function displayTodos(todos) {
     }
     
     return `<tr>
-      <td>${vacation.id}</td>
       <td>${vacation.title}</td>
       <td>${vacation.desc}</td>
       <td>${stopsDisplay}</td>

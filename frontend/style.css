@@ -1,4 +1,4 @@
-body {
+/* body {
     background-color: #f5f5f5;
     padding-bottom: 30px;
   }
@@ -32,7 +32,7 @@ body {
     background-color: #f1f1f1;
   }
   
-  /* Modal styles */
+   Modal styles 
   .modal-content {
     border-radius: 8px;
   }
@@ -41,7 +41,7 @@ body {
     background-color: #f8f9fa;
   }
   
-  /* Button styles */
+  Button styles 
   .btn-primary {
     background-color: #3498db;
     border-color: #3498db;
@@ -84,4 +84,4 @@ body {
     background-color: #27ae60;
     border-color: #27ae60;
     color: white;
-  }
+  } */
