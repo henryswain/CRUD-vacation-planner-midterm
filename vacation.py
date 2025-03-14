@@ -6,7 +6,7 @@ class Stop(BaseModel):
     title: str
     desc: str
 
-class Todo(BaseModel):
+class Vacation(BaseModel):
     id: int
     title: str
     desc: str
@@ -21,12 +21,12 @@ class StopUpdateRequest(BaseModel):
     title: str
     desc: str
 
-class TodoRequest(BaseModel):
+class VacationRequest(BaseModel):
     title: str
     desc: str
     stops: List[StopRequest] = []
 
-class TodoUpdateRequest(BaseModel):
+class VacationUpdateRequest(BaseModel):
     title: str
     desc: str
     stops: List[StopUpdateRequest] = []

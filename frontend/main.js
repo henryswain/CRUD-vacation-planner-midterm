@@ -1,4 +1,4 @@
-const api = 'http://127.0.0.1:8000/todos';
+const api = 'http://127.0.0.1:8000/vacations';
 let stopCounter = 0;
 let currentVacationId = null;
 let vacationModal = null;
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('add-stop-btn').addEventListener('click', addStopInput);
   
   // Load vacations
-  getTodos();
+  getVacations();
 });
 
 // Prepare form for a new vacation
@@ -224,7 +224,7 @@ function createVacation(vacationData) {
     console.log('Vacation created:', data);
     resetForm();
     vacationModal.hide();
-    getTodos();
+    getVacations();
   })
   .catch(error => {
     console.error('Error creating vacation:', error);
@@ -251,7 +251,7 @@ function updateVacation(id, vacationData) {
     console.log('Vacation updated:', data);
     resetForm();
     vacationModal.hide();
-    getTodos();
+    getVacations();
   })
   .catch(error => {
     console.error('Error updating vacation:', error);
@@ -260,7 +260,7 @@ function updateVacation(id, vacationData) {
 }
 
 // Function to delete a vacation
-function deleteTodo(id) {
+function deleteVacation(id) {
   if (!confirm('Are you sure you want to delete this vacation?')) {
     return;
   }
@@ -276,7 +276,7 @@ function deleteTodo(id) {
   })
   .then(data => {
     console.log('Vacation deleted:', data);
-    getTodos();
+    getVacations();
   })
   .catch(error => {
     console.error('Error deleting vacation:', error);
@@ -293,17 +293,17 @@ function resetForm() {
   stopCounter = 0;
 }
 
-// Function to display todos in the table
-function displayTodos(todos) {
-  const tbody = document.getElementById('todo-rows');
+// Function to display vacations in the table
+function displayVacations(vacations) {
+  const tbody = document.getElementById('vacation-rows');
   tbody.innerHTML = '';
   
-  if (todos.length === 0) {
+  if (vacations.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center">No vacations planned yet. Add one!</td></tr>';
     return;
   }
   
-  const rows = todos.map((vacation) => {
+  const rows = vacations.map((vacation) => {
     // Format stops for display
     let stopsDisplay = 'None';
     if (vacation.stops && vacation.stops.length > 0) {
@@ -320,7 +320,7 @@ function displayTodos(todos) {
         <div class="btn-group btn-group-sm" role="group">
           <button onClick="viewVacation(${vacation.id})" type="button" class="btn btn-info">View</button>
           <button onClick="prepareEditVacation(${vacation.id})" type="button" class="btn btn-warning">Edit</button>
-          <button onClick="deleteTodo(${vacation.id})" type="button" class="btn btn-danger">Delete</button>
+          <button onClick="deleteVacation(${vacation.id})" type="button" class="btn btn-danger">Delete</button>
         </div>
       </td>
     </tr>`;
@@ -329,8 +329,8 @@ function displayTodos(todos) {
   tbody.innerHTML = rows.join('');
 }
 
-// Function to get all todos
-function getTodos() {
+// Function to get all vacations
+function getVacations() {
   fetch(api)
     .then(response => {
       if (!response.ok) {
@@ -340,7 +340,7 @@ function getTodos() {
     })
     .then(data => {
       console.log('Vacations loaded:', data);
-      displayTodos(data);
+      displayVacations(data);
     })
     .catch(error => {
       console.error('Error loading vacations:', error);

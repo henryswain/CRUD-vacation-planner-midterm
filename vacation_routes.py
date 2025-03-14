@@ -1,26 +1,26 @@
 from typing import Annotated, List
 from fastapi import APIRouter, HTTPException, Path, status
 
-from todo import Todo, TodoRequest, TodoUpdateRequest, Stop, StopRequest, StopUpdateRequest
+from vacation import Vacation, VacationRequest, VacationUpdateRequest, Stop, StopRequest, StopUpdateRequest
 
 max_id: int = 0
 max_stop_id: int = 0
-todo_router = APIRouter()
+vacation_router = APIRouter()
 
-todo_list = []
+vacation_list = []
 
-@todo_router.get("")
-async def get_todos() -> List[Todo]:
-    return todo_list
+@vacation_router.get("")
+async def get_vacations() -> List[Vacation]:
+    return vacation_list
 
-@todo_router.post("", status_code=status.HTTP_201_CREATED)
-async def add_todo(todo: TodoRequest) -> Todo:
+@vacation_router.post("", status_code=status.HTTP_201_CREATED)
+async def add_vacation(vacation: VacationRequest) -> Vacation:
     global max_id, max_stop_id
     max_id += 1  # auto increment max_id
     
     # Create stops with IDs
     stops = []
-    for stop_request in todo.stops:
+    for stop_request in vacation.stops:
         max_stop_id += 1
         stops.append(Stop(
             id=max_stop_id,
@@ -28,41 +28,41 @@ async def add_todo(todo: TodoRequest) -> Todo:
             desc=stop_request.desc
         ))
     
-    newTodo = Todo(
+    newVacation = Vacation(
         id=max_id,
-        title=todo.title,
-        desc=todo.desc,
+        title=vacation.title,
+        desc=vacation.desc,
         stops=stops
     )
-    todo_list.append(newTodo)
-    return newTodo
+    vacation_list.append(newVacation)
+    return newVacation
 
-@todo_router.get("/{id}")
-async def get_todo_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> Todo:
-    for todo in todo_list:
-        if todo.id == id:
-            return todo
+@vacation_router.get("/{id}")
+async def get_vacation_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> Vacation:
+    for vacation in vacation_list:
+        if vacation.id == id:
+            return vacation
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Item with ID={id} is not found"
     )
 
-@todo_router.put("/{id}")
-async def update_todo(id: Annotated[int, Path(ge=0, le=1000)], todo_update: TodoUpdateRequest) -> Todo:
+@vacation_router.put("/{id}")
+async def update_vacation(id: Annotated[int, Path(ge=0, le=1000)], vacation_update: VacationUpdateRequest) -> Vacation:
     global max_stop_id
     
-    for i, todo in enumerate(todo_list):
-        if todo.id == id:
+    for i, vacation in enumerate(vacation_list):
+        if vacation.id == id:
             # Update basic vacation details
-            todo.title = todo_update.title
-            todo.desc = todo_update.desc
+            vacation.title = vacation_update.title
+            vacation.desc = vacation_update.desc
             
             # Create a mapping of existing stop IDs
-            existing_stops = {stop.id: stop for stop in todo.stops}
+            existing_stops = {stop.id: stop for stop in vacation.stops}
             
             # Process updated stops
             updated_stops = []
-            for stop_update in todo_update.stops:
+            for stop_update in vacation_update.stops:
                 if stop_update.id is not None and stop_update.id in existing_stops:
                     # Update existing stop
                     existing_stop = existing_stops[stop_update.id]
@@ -80,54 +80,54 @@ async def update_todo(id: Annotated[int, Path(ge=0, le=1000)], todo_update: Todo
                     updated_stops.append(new_stop)
             
             # Update the stops list
-            todo.stops = updated_stops
+            vacation.stops = updated_stops
             
-            return todo
+            return vacation
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Vacation with ID={id} is not found"
     )
 
-@todo_router.delete("/{id}")
-async def delete_todo_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> dict:
-    for i in range(len(todo_list)):
-        todo = todo_list[i]
-        if todo.id == id:
-            todo_list.pop(i)
+@vacation_router.delete("/{id}")
+async def delete_vacation_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> dict:
+    for i in range(len(vacation_list)):
+        vacation = vacation_list[i]
+        if vacation.id == id:
+            vacation_list.pop(i)
             return {"msg": f"The vacation with ID={id} is removed."}
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Vacation with ID={id} is not found"
     )
 
-@todo_router.post("/{id}/stops", status_code=status.HTTP_201_CREATED)
+@vacation_router.post("/{id}/stops", status_code=status.HTTP_201_CREATED)
 async def add_stop(id: Annotated[int, Path(ge=0, le=1000)], stop: StopRequest) -> Stop:
     global max_stop_id
     
-    for todo in todo_list:
-        if todo.id == id:
+    for vacation in vacation_list:
+        if vacation.id == id:
             max_stop_id += 1
             new_stop = Stop(
                 id=max_stop_id,
                 title=stop.title,
                 desc=stop.desc
             )
-            todo.stops.append(new_stop)
+            vacation.stops.append(new_stop)
             return new_stop
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Vacation with ID={id} is not found"
     )
 
-@todo_router.put("/{todo_id}/stops/{stop_id}")
+@vacation_router.put("/{vacation_id}/stops/{stop_id}")
 async def update_stop(
-    todo_id: Annotated[int, Path(ge=0, le=1000)], 
+    vacation_id: Annotated[int, Path(ge=0, le=1000)], 
     stop_id: Annotated[int, Path(ge=0, le=1000)],
     stop_update: StopRequest
 ) -> Stop:
-    for todo in todo_list:
-        if todo.id == todo_id:
-            for i, stop in enumerate(todo.stops):
+    for vacation in vacation_list:
+        if vacation.id == vacation_id:
+            for i, stop in enumerate(vacation.stops):
                 if stop.id == stop_id:
                     stop.title = stop_update.title
                     stop.desc = stop_update.desc
@@ -135,32 +135,32 @@ async def update_stop(
             
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
-                detail=f"Stop with ID={stop_id} not found in vacation ID={todo_id}"
+                detail=f"Stop with ID={stop_id} not found in vacation ID={vacation_id}"
             )
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, 
-        detail=f"Vacation with ID={todo_id} is not found"
+        detail=f"Vacation with ID={vacation_id} is not found"
     )
 
-@todo_router.delete("/{todo_id}/stops/{stop_id}")
+@vacation_router.delete("/{vacation_id}/stops/{stop_id}")
 async def delete_stop(
-    todo_id: Annotated[int, Path(ge=0, le=1000)], 
+    vacation_id: Annotated[int, Path(ge=0, le=1000)], 
     stop_id: Annotated[int, Path(ge=0, le=1000)]
 ) -> dict:
-    for todo in todo_list:
-        if todo.id == todo_id:
-            for i, stop in enumerate(todo.stops):
+    for vacation in vacation_list:
+        if vacation.id == vacation_id:
+            for i, stop in enumerate(vacation.stops):
                 if stop.id == stop_id:
-                    todo.stops.pop(i)
-                    return {"msg": f"Stop with ID={stop_id} removed from vacation ID={todo_id}"}
+                    vacation.stops.pop(i)
+                    return {"msg": f"Stop with ID={stop_id} removed from vacation ID={vacation_id}"}
             
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
-                detail=f"Stop with ID={stop_id} not found in vacation ID={todo_id}"
+                detail=f"Stop with ID={stop_id} not found in vacation ID={vacation_id}"
             )
     
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, 
-        detail=f"Vacation with ID={todo_id} is not found"
+        detail=f"Vacation with ID={vacation_id} is not found"
     )
