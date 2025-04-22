@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from beanie import Document
 from typing import List, Optional
 
 class Stop(BaseModel):
@@ -6,11 +7,16 @@ class Stop(BaseModel):
     title: str
     desc: str
 
-class Vacation(BaseModel):
+class Vacation(Document):
     id: int
     title: str
     desc: str
     stops: List[Stop] = []
+
+    
+    class Settings:
+        name = "vacations"
+
 
 class StopRequest(BaseModel):
     title: str

@@ -75,7 +75,7 @@ function viewVacation(vacationId) {
     })
     .then(vacation => {
       // Store the current vacation ID for edit button
-      currentVacationId = vacation.id;
+      currentVacationId = vacation._id;
       
       // Populate the view modal
       document.getElementById('view-vacation-title').textContent = `Vacation: ${vacation.title}`;
@@ -208,10 +208,10 @@ function saveVacation() {
 // Function to create a new vacation
 function createVacation(vacationData) {
   fetch(api, {
-    method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
+    method: 'POST',
     body: JSON.stringify(vacationData)
   })
   .then(response => {
@@ -221,7 +221,6 @@ function createVacation(vacationData) {
     return response.json();
   })
   .then(data => {
-    console.log('Vacation created:', data);
     resetForm();
     vacationModal.hide();
     getVacations();
@@ -234,6 +233,7 @@ function createVacation(vacationData) {
 
 // Function to update an existing vacation
 function updateVacation(id, vacationData) {
+
   fetch(`${api}/${id}`, {
     method: 'PUT',
     headers: {
@@ -248,7 +248,6 @@ function updateVacation(id, vacationData) {
     return response.json();
   })
   .then(data => {
-    console.log('Vacation updated:', data);
     resetForm();
     vacationModal.hide();
     getVacations();
@@ -275,7 +274,6 @@ function deleteVacation(id) {
     return response.json();
   })
   .then(data => {
-    console.log('Vacation deleted:', data);
     getVacations();
   })
   .catch(error => {
@@ -318,9 +316,9 @@ function displayVacations(vacations) {
       <td>${stopsDisplay}</td>
       <td>
         <div class="btn-group btn-group-sm" role="group">
-          <button onClick="viewVacation(${vacation.id})" type="button" class="btn btn-info">View</button>
-          <button onClick="prepareEditVacation(${vacation.id})" type="button" class="btn btn-warning">Edit</button>
-          <button onClick="deleteVacation(${vacation.id})" type="button" class="btn btn-danger">Delete</button>
+          <button onClick="viewVacation(${vacation._id})" type="button" class="btn btn-info">View</button>
+          <button onClick="prepareEditVacation(${vacation._id})" type="button" class="btn btn-warning">Edit</button>
+          <button onClick="deleteVacation(${vacation._id})" type="button" class="btn btn-danger">Delete</button>
         </div>
       </td>
     </tr>`;
@@ -339,7 +337,6 @@ function getVacations() {
       return response.json();
     })
     .then(data => {
-      console.log('Vacations loaded:', data);
       displayVacations(data);
     })
     .catch(error => {
