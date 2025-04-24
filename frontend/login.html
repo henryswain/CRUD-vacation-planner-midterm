@@ -20,6 +20,8 @@
                 <a class="nav-link" href="./index.html">Vacation Planner</a>
               </li>
             </ul> 
+            <span class="navbar-text" id="greeting">
+            </span>
             <form class="d-flex">
                 <a href="./login.html" class="btn btn-outline-primary" id="login-signup-button-on-navbar">login/signup</a>
             </form>
@@ -53,10 +55,17 @@
                   id="password-login"
               />
           </div>
-          <div class="d-flex align-items-center">
-              <button class="btn btn-primary" onclick="document.getElementById('login-form').style.display = 'none'; document.getElementById('signup-form').style.display = 'block'">Sign up</button>
+          <p id="errorMessageLogin" style="color: red;"></p>
+          <div class="d-flex align-items-center gap-4">
+            <div style="display: flex; flex-direction: column;">
+              <label for="switch-to-sign-up">Don't have an account? Sign up</label>
+              <button class="btn btn-primary" onclick="document.getElementById('login-form').style.display = 'none'; document.getElementById('signup-form').style.display = 'block'" id="switch-to-sign-up" name="switch-to-sign-up">Sign up</button>
               <div class="mx-3"></div>
-              <button class="btn btn-outline-success" onclick="login({username: document.getElementById('username-login').value, password: document.getElementById('password-login').value})">Submit</button>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <label for="log-in">Login</label>
+              <button class="btn btn-outline-success" onclick="login({username: document.getElementById('username-login').value, password: document.getElementById('password-login').value})" id="log-in" name="log-in">Submit</button>
+            </div>
           </div>
       </div>
 
@@ -88,11 +97,17 @@
                   id="inputEmail"
               />
           </div>
-          <p id="errorMessageSignup"></p>
+          <p id="errorMessageSignup" style="color: red;"></p>
           <div class="d-flex align-items-center">
-              <button class="btn btn-primary" onclick="document.getElementById('login-form').style.display = 'block'; document.getElementById('signup-form').style.display = 'none'">Login</button>
+            <div style="display: flex; flex-direction: column;">
+              <label for="switch-to-log-in">Already have an account? Login</label>
+              <button class="btn btn-primary" onclick="document.getElementById('login-form').style.display = 'block'; document.getElementById('signup-form').style.display = 'none'" id="switch-to-log-in" name="switch-to-log-in">Login</button>
+            </div>
               <div class="mx-3"></div>
-              <button class="btn btn-outline-success" onclick="signup({email: document.getElementById('inputEmail').value, username: document.getElementById('username-signup').value, password: document.getElementById('password-signup').value})">Submit</button>
+            <div style="display: flex; flex-direction: column;">
+              <label for="sign-up">Sign up</label>
+              <button class="btn btn-outline-success" onclick="signup({email: document.getElementById('inputEmail').value, username: document.getElementById('username-signup').value, password: document.getElementById('password-signup').value})" id="sign-up" name="sign-up">Submit</button>
+            </div>
           </div>
       </div>
     </div>

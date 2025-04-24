@@ -35,22 +35,26 @@ document.addEventListener('DOMContentLoaded', function() {
       getVacations();
     }
   } else {
-    const protectedPages = ['index.html'];
-    const currentPage = window.location.pathname.split('/').pop();
+    // const protectedPages = ['index.html'];
+    // const currentPage = window.location.pathname.split('/').pop();
     
-    if (protectedPages.includes(currentPage)) {
-      window.location.href = './login.html';
-    }
+    // if (protectedPages.includes(currentPage)) {
+    //   window.location.href = './login.html';
+    // }
   }
 });
 
 function updateUIForLoggedInUser(username) {
   const loginButton = document.getElementById('login-signup-button-on-navbar');
   if (loginButton) {
-    loginButton.textContent = username || 'Account';
+    loginButton.textContent = 'Log Out';
     loginButton.href = 'javascript:void(0)';
     loginButton.onclick = logout;
   }
+
+  const helloMsg = document.getElementById("greeting");
+  helloMsg.innerHTML = `Hello ${username}`
+  helloMsg.className = "me-3 navbar-text"
 }
 
 function logout() {
@@ -481,7 +485,7 @@ function getVacations() {
 }
 
 // Function to handle login
-function login(existingUserCredentials) {
+async function login(existingUserCredentials) {
   console.log("login called");
   
   // Create form data for OAuth2 password flow
@@ -489,17 +493,23 @@ function login(existingUserCredentials) {
   formData.append('username', existingUserCredentials.username);
   formData.append('password', existingUserCredentials.password);
   
-  fetch(`${userapi}/login`, {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
+  const response = await fetch(`${userapi}/login`, {
+      method: 'POST',
+      body: formData
+    })
+  console.log("response: ", response)
+  if (!response.ok) {
+    console.log("inside catch")
+    // console.error('Login error:', error);
+    document.getElementById("errorMessageLogin").innerHTML = "Login failed: username or password is incorrect";
+  }
+  else {
+    console.log("response.ok")
+    const data = await response.json()
+    console.log("data: ", data)
+    
+    updateUIForLoggedInUser(data.username)
+    // return
     // Store auth token and user info in sessionStorage
     sessionStorage.setItem('accessToken', data.access_token);
     sessionStorage.setItem('currentUsername', data.username);
@@ -507,11 +517,7 @@ function login(existingUserCredentials) {
     
     // Redirect to vacation planner
     window.location.href = './index.html';
-  })
-  .catch(error => {
-    console.error('Login error:', error);
-    document.getElementById("errorMessageSignup").innerHTML = "Login failed: " + error.message;
-  });
+  }
   
   // Clear form fields
   document.getElementById("password-login").value = "";
@@ -519,33 +525,25 @@ function login(existingUserCredentials) {
 }
 
 // Function to handle signup
-function signup(newUserCredentials) {
+async function signup(newUserCredentials) {
   console.log("signup called");
   
-  fetch(`${userapi}/sign-up`, {
+  const response = await fetch(`${userapi}/sign-up`, {
     headers: {
       'Content-Type': 'application/json'
     },
     method: 'POST',
     body: JSON.stringify(newUserCredentials)
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return response.json();
-  })
-  .then(data => {
-    // After successful signup, automatically log in
+  if (!response.ok) {
+    document.getElementById("errorMessageSignup").innerHTML = "Sign up failed: username already exists";
+  }
+  else {
     login({
       username: newUserCredentials.username,
       password: newUserCredentials.password
     });
-  })
-  .catch(error => {
-    console.error('Signup error:', error);
-    document.getElementById("errorMessageSignup").innerHTML = "Sign up failed: " + error.message;
-  });
+  }
   
   // Clear form fields
   document.getElementById("password-signup").value = "";
