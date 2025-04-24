@@ -8,10 +8,10 @@ class Stop(BaseModel):
     desc: str
 
 class Vacation(Document):
-    id: int
     title: str
     desc: str
     stops: List[Stop] = []
+    created_by: str
 
     
     class Settings:

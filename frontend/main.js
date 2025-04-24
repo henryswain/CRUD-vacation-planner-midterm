@@ -1,28 +1,65 @@
 const api = 'http://127.0.0.1:8000/vacations';
+const userapi = 'http://127.0.0.1:8000/users';
+console.log("main.js is called")
 let stopCounter = 0;
 let currentVacationId = null;
 let vacationModal = null;
 let viewVacationModal = null;
 
-// Initialize Bootstrap modals
 document.addEventListener('DOMContentLoaded', function() {
-  vacationModal = new bootstrap.Modal(document.getElementById('vacationModal'));
-  viewVacationModal = new bootstrap.Modal(document.getElementById('viewVacationModal'));
+  if (document.getElementById('vacationModal')) {
+    vacationModal = new bootstrap.Modal(document.getElementById('vacationModal'));
+  }
   
-  // Add event listener for the save button
-  document.getElementById('save-vacation-btn').addEventListener('click', saveVacation);
+  if (document.getElementById('viewVacationModal')) {
+    viewVacationModal = new bootstrap.Modal(document.getElementById('viewVacationModal'));
+  }
   
-  // Add event listener for adding stops
-  document.getElementById('add-stop-btn').addEventListener('click', addStopInput);
+  const saveVacationBtn = document.getElementById('save-vacation-btn');
+  if (saveVacationBtn) {
+    saveVacationBtn.addEventListener('click', saveVacation);
+  }
   
-  // Load vacations
-  getVacations();
+  const addStopBtn = document.getElementById('add-stop-btn');
+  if (addStopBtn) {
+    addStopBtn.addEventListener('click', addStopInput);
+  }
+  
+  const token = sessionStorage.getItem('accessToken');
+  const username = sessionStorage.getItem('currentUsername');
+  
+  if (token && username) {
+    updateUIForLoggedInUser(username);
+    
+    if (document.getElementById('vacation-rows')) {
+      getVacations();
+    }
+  } else {
+    const protectedPages = ['index.html'];
+    const currentPage = window.location.pathname.split('/').pop();
+    
+    if (protectedPages.includes(currentPage)) {
+      window.location.href = './login.html';
+    }
+  }
 });
 
-// Prepare form for a new vacation
+function updateUIForLoggedInUser(username) {
+  const loginButton = document.getElementById('login-signup-button-on-navbar');
+  if (loginButton) {
+    loginButton.textContent = username || 'Account';
+    loginButton.href = 'javascript:void(0)';
+    loginButton.onclick = logout;
+  }
+}
+
+function logout() {
+  sessionStorage.clear();
+  
+  window.location.href = './login.html';
+}
+
 function prepareNewVacation() {
-  // Reset the form
-  resetForm();
   document.getElementById('vacationModalLabel').textContent = 'New Vacation';
   currentVacationId = null;
 }
@@ -34,8 +71,20 @@ function prepareEditVacation(vacationId) {
   document.getElementById('vacationModalLabel').textContent = 'Edit Vacation';
   currentVacationId = vacationId;
   
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
+  
   // Fetch vacation data
-  fetch(`${api}/${vacationId}`)
+  fetch(`${api}/${vacationId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -60,13 +109,30 @@ function prepareEditVacation(vacationId) {
     })
     .catch(error => {
       console.error('Error fetching vacation:', error);
-      alert('Error loading vacation data');
+      if (error.message.includes('401')) {
+        sessionStorage.clear();
+        window.location.href = './login.html';
+      } else {
+        alert('Error loading vacation data');
+      }
     });
 }
 
 // Function to view vacation details
 function viewVacation(vacationId) {
-  fetch(`${api}/${vacationId}`)
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
+  
+  fetch(`${api}/${vacationId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -78,7 +144,6 @@ function viewVacation(vacationId) {
       currentVacationId = vacation._id;
       
       // Populate the view modal
-      document.getElementById('view-vacation-title').textContent = `Vacation: ${vacation.title}`;
       document.getElementById('view-vacation-title').textContent = vacation.title;
       document.getElementById('view-vacation-desc').textContent = vacation.desc;
       
@@ -110,12 +175,18 @@ function viewVacation(vacationId) {
     })
     .catch(error => {
       console.error('Error fetching vacation:', error);
-      alert('Error loading vacation data');
+      if (error.message.includes('401')) {
+        sessionStorage.clear();
+        window.location.href = './login.html';
+      } else {
+        alert('Error loading vacation data');
+      }
     });
 }
 
 // Function to handle transitioning from view to edit
 function editVacation() {
+  console.log("editVacation called")
   viewVacationModal.hide();
   prepareEditVacation(currentVacationId);
 }
@@ -207,11 +278,19 @@ function saveVacation() {
 
 // Function to create a new vacation
 function createVacation(vacationData) {
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
+  
   fetch(api, {
+    method: 'POST',
     headers: {
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
-    method: 'POST',
     body: JSON.stringify(vacationData)
   })
   .then(response => {
@@ -227,16 +306,28 @@ function createVacation(vacationData) {
   })
   .catch(error => {
     console.error('Error creating vacation:', error);
-    alert('Error creating vacation');
+    if (error.message.includes('401')) {
+      sessionStorage.clear();
+      window.location.href = './login.html';
+    } else {
+      alert('Error creating vacation');
+    }
   });
 }
 
 // Function to update an existing vacation
 function updateVacation(id, vacationData) {
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
 
   fetch(`${api}/${id}`, {
     method: 'PUT',
     headers: {
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(vacationData)
@@ -254,7 +345,12 @@ function updateVacation(id, vacationData) {
   })
   .catch(error => {
     console.error('Error updating vacation:', error);
-    alert('Error updating vacation');
+    if (error.message.includes('401')) {
+      sessionStorage.clear();
+      window.location.href = './login.html';
+    } else {
+      alert('Error updating vacation');
+    }
   });
 }
 
@@ -264,8 +360,19 @@ function deleteVacation(id) {
     return;
   }
   
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
+  
   fetch(`${api}/${id}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
   })
   .then(response => {
     if (!response.ok) {
@@ -278,7 +385,14 @@ function deleteVacation(id) {
   })
   .catch(error => {
     console.error('Error deleting vacation:', error);
-    alert('Error deleting vacation');
+    if (error.message.includes('401')) {
+      sessionStorage.clear();
+      window.location.href = './login.html';
+    } else if (error.message.includes('403')) {
+      alert('You do not have permission to delete this vacation');
+    } else {
+      alert('Error deleting vacation');
+    }
   });
 }
 
@@ -294,6 +408,8 @@ function resetForm() {
 // Function to display vacations in the table
 function displayVacations(vacations) {
   const tbody = document.getElementById('vacation-rows');
+  if (!tbody) return;
+  
   tbody.innerHTML = '';
   
   if (vacations.length === 0) {
@@ -316,9 +432,9 @@ function displayVacations(vacations) {
       <td>${stopsDisplay}</td>
       <td>
         <div class="btn-group btn-group-sm" role="group">
-          <button onClick="viewVacation(${vacation._id})" type="button" class="btn btn-info">View</button>
-          <button onClick="prepareEditVacation(${vacation._id})" type="button" class="btn btn-warning">Edit</button>
-          <button onClick="deleteVacation(${vacation._id})" type="button" class="btn btn-danger">Delete</button>
+          <button onClick="viewVacation('${vacation._id}')" type="button" class="btn btn-info">View</button>
+          <button onClick="prepareEditVacation('${vacation._id}')" type="button" class="btn btn-warning">Edit</button>
+          <button onClick="deleteVacation('${vacation._id}')" type="button" class="btn btn-danger">Delete</button>
         </div>
       </td>
     </tr>`;
@@ -329,7 +445,21 @@ function displayVacations(vacations) {
 
 // Function to get all vacations
 function getVacations() {
-  fetch(api)
+  console.log("getVacations called")
+  const token = sessionStorage.getItem('accessToken');
+  if (!token) {
+    console.error('No authentication token found');
+    window.location.href = './login.html';
+    return;
+  }
+  
+  fetch(`${api}/my`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    method: 'GET'
+    })
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -341,6 +471,84 @@ function getVacations() {
     })
     .catch(error => {
       console.error('Error loading vacations:', error);
-      alert('Error loading vacations');
+      if (error.message.includes('401')) {
+        sessionStorage.clear();
+        window.location.href = './login.html';
+      } else {
+        alert('Error loading vacations');
+      }
     });
+}
+
+// Function to handle login
+function login(existingUserCredentials) {
+  console.log("login called");
+  
+  // Create form data for OAuth2 password flow
+  const formData = new FormData();
+  formData.append('username', existingUserCredentials.username);
+  formData.append('password', existingUserCredentials.password);
+  
+  fetch(`${userapi}/login`, {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    // Store auth token and user info in sessionStorage
+    sessionStorage.setItem('accessToken', data.access_token);
+    sessionStorage.setItem('currentUsername', data.username);
+    sessionStorage.setItem('userRole', data.role || 'BasicUser');
+    
+    // Redirect to vacation planner
+    window.location.href = './index.html';
+  })
+  .catch(error => {
+    console.error('Login error:', error);
+    document.getElementById("errorMessageSignup").innerHTML = "Login failed: " + error.message;
+  });
+  
+  // Clear form fields
+  document.getElementById("password-login").value = "";
+  document.getElementById("username-login").value = "";
+}
+
+// Function to handle signup
+function signup(newUserCredentials) {
+  console.log("signup called");
+  
+  fetch(`${userapi}/sign-up`, {
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify(newUserCredentials)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    // After successful signup, automatically log in
+    login({
+      username: newUserCredentials.username,
+      password: newUserCredentials.password
+    });
+  })
+  .catch(error => {
+    console.error('Signup error:', error);
+    document.getElementById("errorMessageSignup").innerHTML = "Sign up failed: " + error.message;
+  });
+  
+  // Clear form fields
+  document.getElementById("password-signup").value = "";
+  document.getElementById("username-signup").value = "";
+  document.getElementById("inputEmail").value = "";
 }

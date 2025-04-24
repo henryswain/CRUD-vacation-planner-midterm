@@ -1,6 +1,9 @@
 from typing import Annotated, List
-from fastapi import APIRouter, HTTPException, Path, status
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
+from auth.jwt_auth import TokenData
+from routers.user import get_user
 from models.vacation import Vacation, VacationRequest, VacationUpdateRequest, Stop, StopRequest, StopUpdateRequest
 
 max_id: int = 0
@@ -9,31 +12,41 @@ vacation_router = APIRouter()
 
 vacation_list = []
 
-@vacation_router.get("")
-async def get_vacations() -> List[Vacation]:
+# @vacation_router.get("")
+# async def get_vacations() -> List[Vacation]:
 
-    try:
-        print("Before find_all()")
-        vacations = await Vacation.find_all().to_list()
-        print("After find_all()")
-        print("Vacations: ", vacations)
-        return vacations
-    except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+#     try:
+#         print("Before find_all()")
+#         vacations = await Vacation.find_all().to_list()
+#         print("After find_all()")
+#         print("Vacations: ", vacations)
+#         return vacations
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+@vacation_router.get("/my")
+async def get_vacations(user: Annotated[TokenData, Depends(get_user)]) -> list[Vacation]:
+     if not user or not user.username:
+         raise HTTPException(
+             status_code=status.HTTP_401_UNAUTHORIZED,
+             detail=f"Please login.",
+         )
+     return await Vacation.find(Vacation.created_by == user.username).to_list()
 
 @vacation_router.post("", status_code=status.HTTP_201_CREATED)
-async def add_vacation(vacation: VacationRequest) -> Vacation:
+async def add_vacation(
+     r: VacationRequest, user: Annotated[TokenData, Depends(get_user)]
+ ) -> Vacation:
     print("add vacation called")
-    print("vacation: ", vacation)
+    print("vacation: ", r)
     global max_id, max_stop_id
     max_id += 1  # auto increment max_id
     
     # Create stops with IDs
     stops = []
-    for stop_request in vacation.stops:
+    for stop_request in r.stops:
 
         max_stop_id += 1
         stops.append(Stop(
@@ -43,16 +56,17 @@ async def add_vacation(vacation: VacationRequest) -> Vacation:
         ))
     
     newVacation = Vacation(
-        id=max_id,
-        title=vacation.title,
-        desc=vacation.desc,
-        stops=stops
+        title=r.title,
+        desc=r.desc,
+        stops=stops,
+        created_by=user.username
+
     )
     await newVacation.save()
     return newVacation
 
 @vacation_router.get("/{id}")
-async def get_vacation_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> Vacation:
+async def get_vacation_by_id(id: PydanticObjectId) -> Vacation:
     vacation = await Vacation.get(id)
     if vacation:
         return vacation
@@ -61,7 +75,7 @@ async def get_vacation_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> Vacatio
     )
 
 @vacation_router.put("/{id}")
-async def update_vacation(id: Annotated[int, Path(ge=0, le=1000)], vacation_update: VacationUpdateRequest) -> Vacation:
+async def update_vacation(id: PydanticObjectId, vacation_update: VacationUpdateRequest) -> Vacation:
     global max_stop_id
     
     existing_vacation = await Vacation.get(id)
@@ -94,11 +108,22 @@ async def update_vacation(id: Annotated[int, Path(ge=0, le=1000)], vacation_upda
     )
 
 @vacation_router.delete("/{id}")
-async def delete_vacation_by_id(id: Annotated[int, Path(ge=0, le=1000)]) -> dict:
-
-    vacation = await Vacation.get(id)
-    await vacation.delete()
-    return {"msg": f"The vacation with ID={id} is removed."}
+async def delete_vacatioj_by_id(
+     id: PydanticObjectId, user: Annotated[TokenData, Depends(get_user)]
+ ) -> dict:
+    #  if not user or not user.role or user.role != "admin":
+    #      raise HTTPException(
+    #          status_code=status.HTTP_403_FORBIDDEN,
+    #          detail=f"You don't have permissions to delete this movie.",
+    #      )
+     vacation = await Vacation.get(id)
+     if vacation:
+         await vacation.delete()
+         return {"message": "movie deleted"}
+     raise HTTPException(
+         status_code=status.HTTP_404_NOT_FOUND,
+         detail=f"The movie with ID={id} is not found.",
+     )
 
 @vacation_router.post("/{id}/stops", status_code=status.HTTP_201_CREATED)
 async def add_stop(id: Annotated[int, Path(ge=0, le=1000)], stop: StopRequest) -> Stop:
@@ -124,7 +149,7 @@ async def add_stop(id: Annotated[int, Path(ge=0, le=1000)], stop: StopRequest) -
 
 @vacation_router.put("/{vacation_id}/stops/{stop_id}")
 async def update_stop(
-    vacation_id: Annotated[int, Path(ge=0, le=1000)], 
+    vacation_id: PydanticObjectId, 
     stop_id: Annotated[int, Path(ge=0, le=1000)],
     stop_update: StopRequest
 ) -> Stop:
@@ -152,7 +177,7 @@ async def update_stop(
 
 @vacation_router.delete("/{vacation_id}/stops/{stop_id}")
 async def delete_stop(
-    vacation_id: Annotated[int, Path(ge=0, le=1000)], 
+    vacation_id: PydanticObjectId, 
     stop_id: Annotated[int, Path(ge=0, le=1000)]
 ) -> dict:
     vacation = await Vacation.get(vacation_id)
