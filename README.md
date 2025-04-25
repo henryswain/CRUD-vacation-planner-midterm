@@ -30,6 +30,8 @@ Then, run `python3 -m venv venv` to create the virtual environment to prevent ve
 
 Then, run `source ./venv/bin/activate` to activate the virtual environment.
 
-Once inside the virtually environment, run `pip install -r requirements.txt` to install the necessary dependencies to run the application.
+Once inside the virtually environment, run `pip install -r backend/requirements.txt` to install the necessary dependencies to run the application.
+
+Then navigate to the backend directory by running `cd backend`
 
 Finally, run `uvicorn main:app --reload` to run the application. Press command+click on the port number to view the app in the brower.
